@@ -15,79 +15,72 @@
  */
 
 // #pragma message "You may need to add LAYOUT_planck_grid to your keymap layers - see default for an example"
-#include "planck.h"
-#include "action_layer.h"
+#include QMK_KEYBOARD_H
 #include "keymap_steno.h"
-
-extern keymap_config_t keymap_config;
+#include "muse.h"
 
 enum planck_layers {
   _BASE,
+  _NUM,
+  _FUNC,
+  _ADJUST,
   _PLOVER,
-  _NUMBERS,
-  _FUNCTION,
-  _ADJUST
+  _MIDI,
 };
 
 enum planck_keycodes {
-  BASE = SAFE_RANGE,
-  PLOVER,
+  PLOVER = SAFE_RANGE,
   EXT_PLV,
-  NUMBERS,
-  FUNCTION,
-  NAVIGATE
+  MIDI,
+  EXT_MIDI,
+  DISCO
 };
 
-bool bnumlock = false;
-bool numlock_changed = false;
+#define FUNC MO(_FUNC)
+#define NUM MO(_NUM)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
-[_BASE] = LAYOUT_planck_1x2uC(
+[_BASE] = LAYOUT_planck_grid(
    KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_BSPC,
   KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN,  KC_ENT,
-  KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT,   KC_UP, KC_RSFT,
-  MOD_MEH,NAVIGATE,MOD_HYPR,FUNCTION, KC_LALT,           KC_SPC, NUMBERS, KC_RGUI, KC_LEFT, KC_DOWN, KC_RGHT
+  KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT,   KC_UP, XXXXXXX,
+   KC_ESC, XXXXXXX, KC_LGUI, KC_LALT,    FUNC,  KC_SPC,  KC_SPC,     NUM, KC_RALT, KC_LEFT, KC_DOWN, KC_RGHT
 ),
 
-[_NUMBERS] = LAYOUT_planck_1x2uC(
-   KC_GRV,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,   KC_P7,   KC_P8,   KC_P9,    KC_0, KC_BSLS,
-  _______, KC_EXLM,   KC_AT, KC_HASH,  KC_DLR, KC_PERC, KC_CIRC,   KC_P4,   KC_P5,   KC_P6, KC_MINS,  KC_EQL,
-  _______, KC_AMPR, KC_ASTR, KC_LBRC, KC_RBRC, KC_LPRN, KC_RPRN,   KC_P1,   KC_P2,   KC_P3, KC_SLSH, _______,
-  _______, _______, _______, _______, _______,          KC_QUOT, _______,   KC_P0,    KC_7,    KC_8,    KC_9
+[_NUM] = LAYOUT_planck_grid(
+  _______,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,  KC_GRV,
+  _______, _______, _______, _______, _______, _______, _______, KC_LBRC, KC_RBRC, KC_MINS,  KC_EQL, KC_QUOT,
+  _______, KC_INT1, KC_INT2, KC_INT3, KC_INT4, KC_INT5, KC_NUBS, KC_NUHS, _______, KC_SLSH, KC_PGUP, _______,
+  _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_HOME, KC_PGDN,  KC_END
 ),
 
-[_FUNCTION] = LAYOUT_planck_1x2uC(
-   KC_ESC,  KC_DEL, KC_MPRV, KC_MPLY, KC_MNXT, KC_SLCK, KC_WH_U,   KC_F7,   KC_F8,  KC_F9,   KC_F10,  KC_F12,
-  _______,  KC_INS, KC_MUTE, KC_VOLD, KC_VOLU,  KC_BRK, KC_BTN3,   KC_F4,   KC_F5,  KC_F6,   KC_F11, KC_BTN2,
-  _______, KC_PSCR, KC_MRWD, KC_MPLY, KC_MFFD,  KC_APP, KC_WH_D,   KC_F1,   KC_F2,  KC_F3,  KC_MS_U, KC_BTN1,
-  _______, _______, _______, _______, _______,          KC_DEL, _______, _______, KC_MS_L,  KC_MS_D, KC_MS_R
+[_FUNC] = LAYOUT_planck_grid(
+  KC_CAPS,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10, KC_PSCR,
+  _______,  KC_INS, KC_MUTE, KC_VOLD, KC_VOLU,  KC_BRK, KC_WH_L, KC_BTN3, KC_WH_U,  KC_F11,  KC_F12, _______,
+  _______,  KC_APP, KC_MPLY, KC_MPRV, KC_MNXT,  KC_APP, KC_WH_R, KC_BTN2, KC_WH_D, KC_BTN1, KC_MS_U, _______,
+  _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_MS_L, KC_MS_D, KC_MS_R
 ),
 
-/* Plover layer (http://opensteno.org)
- * ,-----------------------------------------------------------------------------------.
- * |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |   #  |
- * |------+------+------+------+------+-------------+------+------+------+------+------|
- * |  FN  |   S  |   T  |   P  |   H  |   *  |   *  |   F  |   P  |   L  |   T  |   D  |
- * |------+------+------+------+------+------|------+------+------+------+------+------|
- * |      |   S  |   K  |   W  |   R  |   *  |   *  |   R  |   B  |   G  |   S  |   Z  |
- * |------+------+------+------+------+------+------+------+------+------+------+------|
- * | Exit |      |      |   A  |   O  |      |      |   E  |   U  |  PWR | RES1 | RES2 |
- * `-----------------------------------------------------------------------------------'
- */
+[_ADJUST] = LAYOUT_planck_grid(
+  XXXXXXX, RESET,   DEBUG,   XXXXXXX, MIDI,    AU_ON,   AU_OFF,  RGB_HUI, RGB_HUD, RGB_MOD,RGB_RMOD, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, MUV_IN,  MUV_DE,  RGB_SAI, RGB_SAD, RGB_SPI, RGB_SPD, XXXXXXX,
+  XXXXXXX, PLOVER,  DISCO,   XXXXXXX, MU_MOD,  MU_ON,   MU_OFF,  RGB_VAI, RGB_VAD, RGB_TOG, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
+),
 
-[_PLOVER] = LAYOUT_planck_1x2uC(
+[_PLOVER] = LAYOUT_planck_grid(
   STN_N1,  STN_N2,  STN_N3,  STN_N4,  STN_N5,  STN_N6,  STN_N7,  STN_N8,  STN_N9,  STN_NA,  STN_NB,  STN_NC,
   STN_FN,  STN_S1,  STN_TL,  STN_PL,  STN_HL,  STN_ST1, STN_ST3, STN_FR,  STN_PR,  STN_LR,  STN_TR,  STN_DR,
   XXXXXXX, STN_S2,  STN_KL,  STN_WL,  STN_RL,  STN_ST2, STN_ST4, STN_RR,  STN_BR,  STN_GR,  STN_SR,  STN_ZR,
-  EXT_PLV, XXXXXXX, XXXXXXX, STN_A,   STN_O,            XXXXXXX, STN_E,   STN_U,   STN_PWR, STN_RE1, STN_RE2
+  EXT_PLV, XXXXXXX, XXXXXXX, STN_A,   STN_O,   XXXXXXX, XXXXXXX, STN_E,   STN_U,   STN_PWR, STN_RE1, STN_RE2
 ),
 
-[_ADJUST] = LAYOUT_planck_1x2uC(
-  XXXXXXX,   RESET,  PLOVER, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, RGB_HUD, RGB_HUI, RGB_SAD, RGB_SAI, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX,  AU_TOG, XXXXXXX, XXXXXXX, XXXXXXX, RGB_VAD, RGB_VAI, RGB_SPD, RGB_SPI, XXXXXXX,
-  XXXXXXX,  MUV_DE,  MUV_IN,  MU_TOG,  MU_MOD, XXXXXXX, XXXXXXX, RGB_TOG, RGB_MOD, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
+[_MIDI] = LAYOUT_planck_grid(
+     MI_As,   MI_B,   MI_C_1,  MI_Cs_1,   MI_D_1,  MI_Ds_1,   MI_E_1,   MI_F_1, MI_Fs_1,  MI_G_1, MI_Gs_1,  MI_A_1,
+      MI_F,  MI_Fs,     MI_G,    MI_Gs,     MI_A,    MI_As,     MI_B,   MI_C_1, MI_Cs_1,  MI_D_1, MI_Ds_1,  MI_E_1,
+      MI_C,  MI_Cs,     MI_D,    MI_Ds,     MI_E,     MI_F,    MI_Fs,     MI_G,   MI_Gs,    MI_A,   MI_As,    MI_B,
+  EXT_MIDI, MI_MOD, MI_MODSD, MI_MODSU, MI_BENDD, MI_BENDU, MI_TRNSD, MI_TRNSU, MI_OCTD, MI_OCTU, MI_VELD, MI_VELU
 )
 
 };
@@ -95,60 +88,32 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #ifdef AUDIO_ENABLE
   float plover_song[][2]     = SONG(PLOVER_SOUND);
   float plover_gb_song[][2]  = SONG(PLOVER_GOODBYE_SOUND);
+  float disco[][2] = SONG(PLATINUM_DISCO);
 #endif
 
-void led_set_kb(uint8_t usb_led) {
-    if (usb_led & (1<<USB_LED_NUM_LOCK)) {
-        bnumlock = true;
-    } else {
-        bnumlock = false;
-    }
-
-    if (usb_led & (1 << USB_LED_CAPS_LOCK)) {
-        register_code(KC_CAPS);
-        unregister_code(KC_CAPS);
-    }
-}
-
-uint32_t layer_state_set_user(uint32_t state) {
-  state = update_tri_layer_state(state, _NUMBERS, _FUNCTION, _ADJUST);
-  return state;
+layer_state_t layer_state_set_user(layer_state_t state) {
+  return update_tri_layer_state(state, _NUM, _FUNC, _ADJUST);
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
-    case NUMBERS:
-      if (record->event.pressed) {
-        if(!bnumlock) {
-            numlock_changed = true;
-            register_code(KC_NLCK);
-            unregister_code(KC_NLCK);
-        }
-        layer_on(_NUMBERS);
-      } else {
-        if(bnumlock && numlock_changed) {
-            numlock_changed = false;
-            register_code(KC_NLCK);
-            unregister_code(KC_NLCK);
-        }
-        layer_off(_NUMBERS);
-      }
-    break;
-    case FUNCTION:
-      if (record->event.pressed) {
-        layer_on(_FUNCTION);
-      } else {
-        layer_off(_FUNCTION);
-      }
-      return false;
-      break;
     case PLOVER:
-      if (!record->event.pressed) {
+      if (record->event.pressed) {
         #ifdef AUDIO_ENABLE
           stop_all_notes();
           PLAY_SONG(plover_song);
         #endif
+        layer_off(_NUM);
+        layer_off(_FUNC);
+        layer_off(_ADJUST);
+        layer_off(_MIDI);
         layer_on(_PLOVER);
+        if (!eeconfig_is_enabled()) {
+            eeconfig_init();
+        }
+        keymap_config.raw = eeconfig_read_keymap();
+        keymap_config.nkro = 1;
+        eeconfig_update_keymap(keymap_config.raw);
       }
       return false;
       break;
@@ -161,10 +126,90 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
       break;
+
+    case MIDI:
+      if (record->event.pressed) {
+        #ifdef AUDIO_ENABLE
+          stop_all_notes();
+          PLAY_SONG(plover_song);
+        #endif
+        layer_off(_NUM);
+        layer_off(_FUNC);
+        layer_off(_ADJUST);
+        layer_off(_PLOVER);
+        layer_on(_MIDI);
+        if (!eeconfig_is_enabled()) {
+            eeconfig_init();
+        }
+        keymap_config.raw = eeconfig_read_keymap();
+        keymap_config.nkro = 1;
+        eeconfig_update_keymap(keymap_config.raw);
+      }
+      return false;
+      break;
+    case EXT_MIDI:
+      if (record->event.pressed) {
+        #ifdef AUDIO_ENABLE
+          PLAY_SONG(plover_gb_song);
+        #endif
+        layer_off(_MIDI);
+      }
+      return false;
+      break;
+
+    case DISCO:
+      if (record->event.pressed) {
+        #ifdef AUDIO_ENABLE
+          PLAY_SONG(disco);
+        #endif
+      }
+      return false;
+      break;
   }
   return true;
 }
 
-void matrix_init_user() {
-  steno_set_mode(STENO_MODE_GEMINI);
+// bool muse_mode = false;
+// uint8_t last_muse_note = 0;
+// uint16_t muse_counter = 0;
+// uint8_t muse_offset = 70;
+// uint16_t muse_tempo = 50;
+
+// void matrix_scan_user(void) {
+// #ifdef AUDIO_ENABLE
+//     if (muse_mode) {
+//         if (muse_counter == 0) {
+//             uint8_t muse_note = muse_offset + SCALE[muse_clock_pulse()];
+//             if (muse_note != last_muse_note) {
+//                 stop_note(compute_freq_for_midi_note(last_muse_note));
+//                 play_note(compute_freq_for_midi_note(muse_note), 0xF);
+//                 last_muse_note = muse_note;
+//             }
+//         }
+//         muse_counter = (muse_counter + 1) % muse_tempo;
+//     } else {
+//         if (muse_counter) {
+//             stop_all_notes();
+//             muse_counter = 0;
+//         }
+//     }
+// #endif
+// }
+
+bool music_mask_user(uint16_t keycode) {
+  switch (keycode) {
+    case FUNC:
+    case NUM:
+      return false;
+    default:
+      return true;
+  }
+}
+
+RGB rgb_matrix_hsv_to_rgb(HSV hsv) {
+  RGB rgb = hsv_to_rgb(hsv);
+  uint16_t rr = rgb.r * 19;
+  rr /= 32;
+  rgb.r = rr;
+  return rgb;
 }
