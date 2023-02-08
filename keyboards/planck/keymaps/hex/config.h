@@ -4,6 +4,9 @@
 
 #include "../../config.h"
 
+#define PERMISSIVE_HOLD
+#define TAPPING_FORCE_HOLD
+
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_MATRIX_KEYPRESSES
 #define RGB_MATRIX_KEYRELEASES
