@@ -35,7 +35,7 @@ uint8_t music_mode          = MUSIC_MODE_MAJOR;
 // music sequencer
 static bool    music_sequence_recording = false;
 static bool    music_sequence_recorded  = false;
-static bool    music_sequence_playing   = false;
+bool    music_sequence_playing   = false;
 static uint8_t music_sequence[16]       = {0};
 static uint8_t music_sequence_count     = 0;
 static uint8_t music_sequence_position  = 0;

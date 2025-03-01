@@ -13,4 +13,4 @@ CONSOLE_ENABLE = no
 RAW_ENABLE = no
 VIRTSER_ENABLE = no
 
-SRC += muse.c
+SRC += user_config.c

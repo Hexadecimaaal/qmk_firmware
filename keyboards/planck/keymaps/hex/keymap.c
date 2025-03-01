@@ -16,8 +16,9 @@
 
 // #pragma message "You may need to add LAYOUT_planck_grid to your keymap layers - see default for an example"
 #include QMK_KEYBOARD_H
+#include "user_config.h"
 
-extern bool music_activated, midi_activated;
+extern bool music_activated, midi_activated, music_sequence_playing;
 extern uint8_t music_mode;
 extern uint8_t music_starting_note;
 extern int     music_offset;
@@ -38,12 +39,14 @@ enum planck_keycodes {
   MIDI,
   EXT_MIDI,
   PLAY,
-  EXT_PLAY
+  EXT_PLAY,
+  UPSDOWN
 };
 
 #define FUNC MO(_FUNC)
 #define NUM MO(_NUM)
 // #define C_T_ESC LCTL_T(KC_ESC)
+
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -69,7 +72,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 
 [_ADJUST] = LAYOUT_planck_grid(
-  XXXXXXX, QK_BOOT, DB_TOGG, XXXXXXX,    MIDI,   AU_ON,  AU_OFF, RGB_HUI, RGB_HUD, RGB_MOD,RGB_RMOD, XXXXXXX,
+  XXXXXXX, QK_BOOT, DB_TOGG, UPSDOWN,    MIDI,   AU_ON,  AU_OFF, RGB_HUI, RGB_HUD, RGB_MOD,RGB_RMOD, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,    PLAY, XXXXXXX, XXXXXXX, RGB_SAI, RGB_SAD, RGB_SPI, RGB_SPD, XXXXXXX,
   XXXXXXX,  PLOVER, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, RGB_VAI, RGB_VAD, RGB_TOG, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
@@ -118,11 +121,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           stop_all_notes();
           PLAY_SONG(plover_song);
         #endif
-        layer_off(_NUM);
-        layer_off(_FUNC);
-        layer_off(_ADJUST);
-        layer_off(_MIDI);
-        layer_off(_PLAY);
+        layer_clear();
         layer_on(_PLOVER);
         if (!eeconfig_is_enabled()) {
             eeconfig_init();
@@ -149,11 +148,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           stop_all_notes();
           PLAY_SONG(play_song);
         #endif
-        layer_off(_NUM);
-        layer_off(_FUNC);
-        layer_off(_ADJUST);
-        layer_off(_PLOVER);
-        layer_off(_PLAY);
+        layer_clear();
         layer_on(_MIDI);
         if (!eeconfig_is_enabled()) {
             eeconfig_init();
@@ -181,11 +176,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           stop_all_notes();
           PLAY_SONG(play_song);
         #endif
-        layer_off(_NUM);
-        layer_off(_FUNC);
-        layer_off(_ADJUST);
-        layer_off(_PLOVER);
-        layer_off(_MIDI);
+        layer_clear();
         layer_on(_PLAY);
         music_mode = MUSIC_MODE_CHROMATIC;
         music_activated = midi_activated = 1;
@@ -198,8 +189,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           stop_all_notes();
           PLAY_SONG(play_ext_song);
         #endif
-        music_activated = midi_activated = 0;
+        music_sequence_playing = music_activated = midi_activated = 0;
         layer_off(_PLAY);
+      }
+      return false;
+      break;
+    case UPSDOWN:
+      if (record->event.pressed) {
+        layer_clear();
+        toggle_upside_down();
       }
       return false;
       break;
