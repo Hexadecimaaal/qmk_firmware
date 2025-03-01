@@ -14,12 +14,19 @@
 #ifdef AUDIO_ENABLE
 
     #define STARTUP_SONG SONG(PLANCK_SOUND)
-
+    // #define AUDIO_ENABLE_TONE_MULTIPLEXING
+    // #define AUDIO_TONE_MULTIPLEXING_RATE_DEFAULT 10
+    #define PITCH_STANDARD_A 880.0f
     /* #define DEFAULT_LAYER_SONGS { SONG(QWERTY_SOUND), \
                                    SONG(COLEMAK_SOUND), \
                                    SONG(DVORAK_SOUND) \
                                  }
     */
+    #define MUSIC_MAP
+#endif
+
+#ifdef AUDIO_VOICES
+    #undef AUDIO_VOICES
 #endif
 
 // #define MUSIC_MASK (keycode != KC_NO)

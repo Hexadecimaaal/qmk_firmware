@@ -16,8 +16,11 @@
 
 // #pragma message "You may need to add LAYOUT_planck_grid to your keymap layers - see default for an example"
 #include QMK_KEYBOARD_H
-#include "keymap_steno.h"
-#include "muse.h"
+
+extern bool music_activated, midi_activated;
+extern uint8_t music_mode;
+extern uint8_t music_starting_note;
+extern int     music_offset;
 
 enum planck_layers {
   _BASE,
@@ -26,6 +29,7 @@ enum planck_layers {
   _ADJUST,
   _PLOVER,
   _MIDI,
+  _PLAY
 };
 
 enum planck_keycodes {
@@ -33,18 +37,19 @@ enum planck_keycodes {
   EXT_PLV,
   MIDI,
   EXT_MIDI,
-  DISCO
+  PLAY,
+  EXT_PLAY
 };
 
 #define FUNC MO(_FUNC)
 #define NUM MO(_NUM)
-#define C_T_ESC LCTL_T(KC_ESC)
+// #define C_T_ESC LCTL_T(KC_ESC)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 [_BASE] = LAYOUT_planck_grid(
    KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_BSPC,
-  C_T_ESC,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN,  KC_ENT,
+  KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN,  KC_ENT,
   KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RSFT,
    KC_ESC, XXXXXXX, KC_LGUI, KC_LALT,    FUNC,  KC_SPC,  KC_SPC,     NUM, KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT
 ),
@@ -65,8 +70,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 [_ADJUST] = LAYOUT_planck_grid(
   XXXXXXX, QK_BOOT, DB_TOGG, XXXXXXX,    MIDI,   AU_ON,  AU_OFF, RGB_HUI, RGB_HUD, RGB_MOD,RGB_RMOD, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  MUV_IN,  MUV_DE, RGB_SAI, RGB_SAD, RGB_SPI, RGB_SPD, XXXXXXX,
-  XXXXXXX,   PLOVER,  DISCO, XXXXXXX,  MU_MOD,   MU_ON,  MU_OFF, RGB_VAI, RGB_VAD, RGB_TOG, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,    PLAY, XXXXXXX, XXXXXXX, RGB_SAI, RGB_SAD, RGB_SPI, RGB_SPD, XXXXXXX,
+  XXXXXXX,  PLOVER, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, RGB_VAI, RGB_VAD, RGB_TOG, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX, _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
 ),
 
@@ -81,7 +86,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     MI_As,    MI_B,   MI_C1,  MI_Cs1,   MI_D1,  MI_Ds1,   MI_E1,   MI_F1,  MI_Fs1,   MI_G1,  MI_Gs1,   MI_A1,
      MI_F,   MI_Fs,    MI_G,   MI_Gs,    MI_A,   MI_As,    MI_B,   MI_C1,  MI_Cs1,   MI_D1,  MI_Ds1,   MI_E1,
      MI_C,   MI_Cs,    MI_D,   MI_Ds,    MI_E,    MI_F,   MI_Fs,    MI_G,   MI_Gs,    MI_A,   MI_As,    MI_B,
-  EXT_MIDI, MI_MOD, MI_MODD, MI_MODU, MI_BNDD, MI_BNDU, MI_TRSD, MI_TRSU, MI_OCTD, MI_OCTU, MI_VELD, MI_VELU
+ EXT_MIDI,  MI_MOD, MI_MODD, MI_MODU, MI_BNDD, MI_BNDU, MI_TRSD, MI_TRSU, MI_OCTD, MI_OCTU, MI_VELD, MI_VELU
+),
+
+[_PLAY] = LAYOUT_planck_grid(
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+ EXT_PLAY, KC_LCTL, KC_LGUI, KC_LALT, KC_DOWN,   KC_UP, MU_TOGG, MI_TOGG, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX
 )
 
 };
@@ -89,6 +101,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #ifdef AUDIO_ENABLE
   float plover_song[][2]     = SONG(PLOVER_SOUND);
   float plover_gb_song[][2]  = SONG(PLOVER_GOODBYE_SOUND);
+  float play_song[][2] = SONG(MUSIC_ON_SOUND);
+  float play_ext_song[][2] = SONG(MUSIC_OFF_SOUND);
   float disco[][2] = SONG(PLATINUM_DISCO);
 #endif
 
@@ -108,6 +122,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         layer_off(_FUNC);
         layer_off(_ADJUST);
         layer_off(_MIDI);
+        layer_off(_PLAY);
         layer_on(_PLOVER);
         if (!eeconfig_is_enabled()) {
             eeconfig_init();
@@ -132,12 +147,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (record->event.pressed) {
         #ifdef AUDIO_ENABLE
           stop_all_notes();
-          PLAY_SONG(plover_song);
+          PLAY_SONG(play_song);
         #endif
         layer_off(_NUM);
         layer_off(_FUNC);
         layer_off(_ADJUST);
         layer_off(_PLOVER);
+        layer_off(_PLAY);
         layer_on(_MIDI);
         if (!eeconfig_is_enabled()) {
             eeconfig_init();
@@ -151,18 +167,39 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case EXT_MIDI:
       if (record->event.pressed) {
         #ifdef AUDIO_ENABLE
-          PLAY_SONG(plover_gb_song);
+          stop_all_notes();
+          PLAY_SONG(play_ext_song);
         #endif
         layer_off(_MIDI);
       }
       return false;
       break;
 
-    case DISCO:
+    case PLAY:
       if (record->event.pressed) {
         #ifdef AUDIO_ENABLE
-          PLAY_SONG(disco);
+          stop_all_notes();
+          PLAY_SONG(play_song);
         #endif
+        layer_off(_NUM);
+        layer_off(_FUNC);
+        layer_off(_ADJUST);
+        layer_off(_PLOVER);
+        layer_off(_MIDI);
+        layer_on(_PLAY);
+        music_mode = MUSIC_MODE_CHROMATIC;
+        music_activated = midi_activated = 1;
+      }
+      return false;
+      break;
+    case EXT_PLAY:
+      if (record->event.pressed) {
+        #ifdef AUDIO_ENABLE
+          stop_all_notes();
+          PLAY_SONG(play_ext_song);
+        #endif
+        music_activated = midi_activated = 0;
+        layer_off(_PLAY);
       }
       return false;
       break;
@@ -170,42 +207,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   return true;
 }
 
-// bool muse_mode = false;
-// uint8_t last_muse_note = 0;
-// uint16_t muse_counter = 0;
-// uint8_t muse_offset = 70;
-// uint16_t muse_tempo = 50;
-
-// void matrix_scan_user(void) {
-// #ifdef AUDIO_ENABLE
-//     if (muse_mode) {
-//         if (muse_counter == 0) {
-//             uint8_t muse_note = muse_offset + SCALE[muse_clock_pulse()];
-//             if (muse_note != last_muse_note) {
-//                 stop_note(compute_freq_for_midi_note(last_muse_note));
-//                 play_note(compute_freq_for_midi_note(muse_note), 0xF);
-//                 last_muse_note = muse_note;
-//             }
-//         }
-//         muse_counter = (muse_counter + 1) % muse_tempo;
-//     } else {
-//         if (muse_counter) {
-//             stop_all_notes();
-//             muse_counter = 0;
-//         }
-//     }
-// #endif
-// }
-
-bool music_mask_user(uint16_t keycode) {
-  switch (keycode) {
-    case FUNC:
-    case NUM:
-      return false;
-    default:
-      return true;
-  }
-}
 
 RGB rgb_matrix_hsv_to_rgb(HSV hsv) {
   RGB rgb = hsv_to_rgb(hsv);
